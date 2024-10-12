@@ -1,8 +1,10 @@
 const express = require('express')
 const app = express()
 const morgan = require('morgan');
+const cors = require('cors')
 
 app.use(express.json())
+app.use(cors())
 
 morgan.token('body', function gePostToken(req) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
@@ -63,12 +65,25 @@ app.get('/api/persons/:id', (request, response) => {
 
 })
 
+app.patch('/api/persons/:id', (request, response) => {
+  const id = Number(request.params.id);
+  const body = request.body;
+  const person = persons.find(p => p.id === id);
+  const updatedPhonePerson = { ...person, ...body };
+  if (person) {
+    persons = persons.map(p => p.id === id ? updatedPhonePerson : p)
+    response.json(updatedPhonePerson).status(200)
+  } else {
+    response.status(404).send({ error: "Unknown id" }).end()
+  }
+})
+
 app.delete('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
   const person = persons.find(p => p.id === id);
   if (person) {
     persons = persons.filter(p => p.id !== id);
-    response.json(persons).status(200);
+    response.json(person).status(200);
   } else {
     response.status(404).send({ error: "Unknown id" }).end();
   }
@@ -102,7 +117,7 @@ app.post('/api/persons', (request, response) => {
   response.json(person).status(200)
 })
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
