@@ -19,8 +19,10 @@ app.get('/', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-  const responseMessage = `Phonebook has info for ${persons.length} people <br /> ${new Date(Date.now())}`
-  response.send(responseMessage);
+  Phonebook.find({}).then(persons => {
+    const responseMessage = `Phonebook has info for ${persons.length} people <br /> ${new Date(Date.now())}`
+    response.send(responseMessage);
+  })
 })
 
 app.get('/api/persons', (request, response) => {
