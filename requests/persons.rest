@@ -2,8 +2,8 @@ POST http://localhost:3001/api/persons
 Content-Type: application/json
 
 {
-  "name": "Okarun",
-  "number": "787-52852"
+  "name": "HadrianOOP",
+  "number": "787528528"
 }
 
 ###
@@ -11,12 +11,12 @@ GET http://localhost:3001/api/persons
 ###
 GET http://localhost:3001/api/persons/670eef3f985dfa2467cf76
 ###
-DELETE  http://localhost:3001/api/persons/670eef3f985dfa2467cf76b2
+DELETE  http://localhost:3001/api/persons/670eef3f985dfa2467cf76
 ###
-PATCH http://localhost:3001/api/persons/670eef3f985dfa2467cf7615
+PUT http://localhost:3001/api/persons/670f0884277e9130b946b17f
 Content-Type: application/json
 
 {
-  "name": "Muda",
-  "number": "685-98932"
+  "name": "Mudaa",
+  "number": "123-8932852"
 }

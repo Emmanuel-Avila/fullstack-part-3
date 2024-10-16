@@ -8,6 +8,7 @@ const Phonebook = require('./models/phonebook')
 app.use(express.json())
 app.use(cors())
 
+
 morgan.token('body', function gePostToken(req) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
@@ -28,7 +29,7 @@ app.get('/api/persons', (request, response) => {
   })
 })
 
-app.get('/api/persons/:id', (request, response) => {
+app.get('/api/persons/:id', (request, response, next) => {
   const id = request.params.id;
 
   Phonebook.findById(id)
@@ -38,18 +39,15 @@ app.get('/api/persons/:id', (request, response) => {
       }
       response.status(404).send({ error: "Unknown Id" }).end();
     })
-    .catch(err => {
-      console.log(err)
-      response.status(500).send({ error: "Unknown Id" }).end();
-    })
+    .catch(err => { next(err) })
 })
 
-app.patch('/api/persons/:id', (request, response) => {
+app.put('/api/persons/:id', (request, response, next) => {
 
   const id = request.params.id;
   const body = request.body;
 
-  Phonebook.findByIdAndUpdate(id, { ...body }, { new: true })
+  Phonebook.findByIdAndUpdate(id, { ...body }, { new: true, runValidators: true })
     .then(result => {
       if (result) {
         return response.json(result).status(200)
@@ -57,30 +55,28 @@ app.patch('/api/persons/:id', (request, response) => {
       response.status(404).send({ error: "Unknown id" }).end()
     })
     .catch(err => {
-      console.log(err)
-      response.status(500).send({ error: "Unknown id" }).end()
+      next(err)
     })
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   const id = request.params.id
 
   Phonebook.findByIdAndDelete(id)
     .then(result => {
       if (result.length !== 0) {
-        return response.json(result).status(200);
+        return response.json(result).status(204).end();
       }
       response.status(404).send({ error: "Unknown id" }).end();
     })
     .catch(err => {
-      console.log(err)
-      response.status(500).send({ error: "Unknown id" }).end();
+      next(err)
     })
 
 
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body;
 
   if (!body.name || !body.number) {
@@ -94,7 +90,7 @@ app.post('/api/persons', (request, response) => {
       if (result.length !== 0) {
         return response.status(400).json({
           error: "name must be unique"
-        }).end()
+        })
       }
 
       const person = new Phonebook({
@@ -102,16 +98,31 @@ app.post('/api/persons', (request, response) => {
         number: body.number
       })
 
-      person.save().then(savedPerson => {
-        response.json(savedPerson).status(201)
-      })
+      person.save()
+        .then(savedPerson => {
+          response.json(savedPerson).status(201)
+        })
+        .catch(err => next(err))
 
     })
     .catch(err => {
-      console.log(err)
-      response.status(500).end()
+      next(err)
     })
 })
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {

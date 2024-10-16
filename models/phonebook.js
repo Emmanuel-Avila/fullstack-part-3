@@ -7,13 +7,26 @@ console.log('connecting to', url);
 
 mongoose.connect(url)
   .then(result => console.log('connected to MongoDB'))
-  .catch(err => { console.log('error connecting to MongoDB: ', error.message) })
+  .catch(err => { console.log('error connecting to MongoDB: ', err.message) })
 
 
 
 const phonebookSchema = new mongoose.Schema({
-  name: String,
-  number: String,
+  name: {
+    type: String,
+    minLength: 5,
+    required: true
+  },
+  number: {
+    type: String,
+    validate: {
+      validator: function (v) {
+        return /([0-9]{2,3}-[0-9]{3,})/.test(v);
+      },
+      message: props => `${props.value} no es un numero valido!`
+    },
+    required: true
+  },
 })
 
 phonebookSchema.set('toJSON', {
