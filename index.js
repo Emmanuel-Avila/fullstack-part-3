@@ -1,7 +1,9 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const morgan = require('morgan');
 const cors = require('cors')
+const Phonebook = require('./models/phonebook')
 
 app.use(express.json())
 app.use(cors())
@@ -10,36 +12,6 @@ morgan.token('body', function gePostToken(req) { return JSON.stringify(req.body)
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 app.use(express.static('dist'))
-
-let persons = [
-  {
-    "id": 1,
-    "name": "Arto Hellas",
-    "number": "040-123456"
-  },
-  {
-    "id": 2,
-    "name": "Ada Lovelace",
-    "number": "39-44-5323523"
-  },
-  {
-    "id": 3,
-    "name": "Dan Abramov",
-    "number": "12-43-234345"
-  },
-  {
-    "id": 4,
-    "name": "Mary Poppendieck",
-    "number": "39-23-6423122"
-  }
-]
-
-const generateId = () => {
-  const maxId = persons.length > 0
-    ? Math.max(...persons.map(n => n.id))
-    : 0
-  return maxId + 1
-}
 
 app.get('/', (request, response) => {
   response.send('<h1>Hello World!</h1>')
@@ -51,44 +23,60 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Phonebook.find({}).then(persons => {
+    response.json(persons)
+  })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
+  const id = request.params.id;
 
-  const person = persons.find(p => p.id === id);
-
-  if (person) {
-    response.json(person).status(200);
-  } else {
-    response.status(404).send({ error: "Unknown Id" }).end();
-  }
-
+  Phonebook.findById(id)
+    .then(person => {
+      if (person) {
+        return response.json(person).status(200);
+      }
+      response.status(404).send({ error: "Unknown Id" }).end();
+    })
+    .catch(err => {
+      console.log(err)
+      response.status(500).send({ error: "Unknown Id" }).end();
+    })
 })
 
 app.patch('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
+
+  const id = request.params.id;
   const body = request.body;
-  const person = persons.find(p => p.id === id);
-  const updatedPhonePerson = { ...person, ...body };
-  if (person) {
-    persons = persons.map(p => p.id === id ? updatedPhonePerson : p)
-    response.json(updatedPhonePerson).status(200)
-  } else {
-    response.status(404).send({ error: "Unknown id" }).end()
-  }
+
+  Phonebook.findByIdAndUpdate(id, { ...body }, { new: true })
+    .then(result => {
+      if (result) {
+        return response.json(result).status(200)
+      }
+      response.status(404).send({ error: "Unknown id" }).end()
+    })
+    .catch(err => {
+      console.log(err)
+      response.status(500).send({ error: "Unknown id" }).end()
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find(p => p.id === id);
-  if (person) {
-    persons = persons.filter(p => p.id !== id);
-    response.json(person).status(200);
-  } else {
-    response.status(404).send({ error: "Unknown id" }).end();
-  }
+  const id = request.params.id
+
+  Phonebook.findByIdAndDelete(id)
+    .then(result => {
+      if (result.length !== 0) {
+        return response.json(result).status(200);
+      }
+      response.status(404).send({ error: "Unknown id" }).end();
+    })
+    .catch(err => {
+      console.log(err)
+      response.status(500).send({ error: "Unknown id" }).end();
+    })
+
 
 })
 
@@ -101,22 +89,28 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  const duplicateName = persons.find(p => p.name === body.name);
+  Phonebook.find({ name: body.name })
+    .then(result => {
+      if (result.length !== 0) {
+        return response.status(400).json({
+          error: "name must be unique"
+        }).end()
+      }
 
-  if (duplicateName) {
-    return response.status(400).json({
-      error: "name must be unique"
+      const person = new Phonebook({
+        name: body.name,
+        number: body.number
+      })
+
+      person.save().then(savedPerson => {
+        response.json(savedPerson).status(201)
+      })
+
     })
-  }
-
-  const person = {
-    name: body.name,
-    number: body.number,
-    id: generateId()
-  }
-
-  persons = persons.concat(person);
-  response.json(person).status(200)
+    .catch(err => {
+      console.log(err)
+      response.status(500).end()
+    })
 })
 
 const PORT = process.env.PORT || 3001

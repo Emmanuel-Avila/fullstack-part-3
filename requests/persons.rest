@@ -3,8 +3,20 @@ Content-Type: application/json
 
 {
   "name": "Okarun",
-  "number": "78796"
+  "number": "787-52852"
 }
 
 ###
 GET http://localhost:3001/api/persons
+###
+GET http://localhost:3001/api/persons/670eef3f985dfa2467cf76
+###
+DELETE  http://localhost:3001/api/persons/670eef3f985dfa2467cf76b2
+###
+PATCH http://localhost:3001/api/persons/670eef3f985dfa2467cf7615
+Content-Type: application/json
+
+{
+  "name": "Muda",
+  "number": "685-98932"
+}
