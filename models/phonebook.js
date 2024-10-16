@@ -2,11 +2,11 @@ const mongoose = require('mongoose')
 
 mongoose.set('strictQuery', false)
 
-const url = process.env.MONGODB_URI;
-console.log('connecting to', url);
+const url = process.env.MONGODB_URI
+console.log('connecting to', url)
 
 mongoose.connect(url)
-  .then(result => console.log('connected to MongoDB'))
+  .then(() => console.log('connected to MongoDB'))
   .catch(err => { console.log('error connecting to MongoDB: ', err.message) })
 
 
@@ -21,7 +21,7 @@ const phonebookSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator: function (v) {
-        return /([0-9]{2,3}-[0-9]{3,})/.test(v);
+        return /([0-9]{2,3}-[0-9]{3,})/.test(v)
       },
       message: props => `${props.value} no es un numero valido!`
     },
@@ -32,9 +32,9 @@ const phonebookSchema = new mongoose.Schema({
 phonebookSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
-    delete returnedObject._id;
+    delete returnedObject._id
     delete returnedObject.__v
-    return returnedObject;
+    return returnedObject
   }
 })
 module.exports = mongoose.model('Phonebook', phonebookSchema)

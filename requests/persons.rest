@@ -20,3 +20,5 @@ Content-Type: application/json
   "name": "Mudaa",
   "number": "123-8932852"
 }
+###
+GET http://localhost:3001/info
